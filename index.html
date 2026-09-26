@@ -17,6 +17,7 @@
       --jieyang: #a27b18;
       --rail: #263a65;
       --route: #8f4d8c;
+      --hotel: #2f6fbb;
       --play: #398761;
       --food: #e87824;
     }
@@ -217,6 +218,7 @@
     .pin.station { width: 30px; height: 30px; background: var(--rail); }
     .pin.station.secondary { opacity: .72; transform: rotate(-45deg) scale(.86); }
     .pin.airport { background: var(--route); }
+    .pin.hotel { background: var(--hotel); }
 
     .city-label {
       padding: 3px 8px;
@@ -361,7 +363,7 @@
   <header class="topbar">
     <div class="eyebrow">2026 · 7日6夜</div>
     <h1>潮汕三市吃玩行地图</h1>
-    <p class="subtitle">潮州 → 汕头 → 揭阳｜主点 count 含 101 个攻略编号；仅展开 25 个已核准坐标的编号。虚线只表示行程顺序。</p>
+    <p class="subtitle">汕头 4 晚 → 揭阳 2 晚｜潮州从汕头当日往返；主点 count 含 101 个攻略编号。虚线只表示行程顺序。</p>
     <nav class="filters" aria-label="按城市查看">
       <button class="filter active" data-city="all">全部</button>
       <button class="filter" data-city="chaozhou">潮州</button>
@@ -374,8 +376,8 @@
   <aside class="panel">
     <div class="panel-heading">
       <div class="panel-title">
-        <strong>重点吃玩地点</strong>
-        <span id="visible-count">29 个地点</span>
+        <strong>住宿与重点吃玩地点</strong>
+        <span id="visible-count">31 个地点</span>
       </div>
       <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true" aria-controls="place-list">收起</button>
     </div>
@@ -512,6 +514,29 @@
       name: "揭阳潮汕国际机场", lat: 23.5528, lng: 116.5033,
       note: "10月1日抵达、10月7日返程；机场与揭阳机场站不是同一个地图点。"
     };
+
+    const hotels = [
+      {
+        name: "巷里·悦禾民宿（汕头鸥汀店）",
+        city: "shantou",
+        lat: 23.417376,
+        lng: 116.717135,
+        short: "10 月 1—5 日 · 4 晚",
+        detail: "龙湖区鸥汀街道鸥上池仔内一横 2 号；悦享巨幕影院房（全屋家电＋功夫茶具），1 间。",
+        note: "位于鸥汀古城巷内；抵达、跨城或携带行李时，提前向民宿确认车辆可达的最近上下客点。",
+        href: "https://m.ctrip.com/html5/hotel/hoteldetail/133394013.html"
+      },
+      {
+        name: "揭阳宾馆（揭阳古城店）",
+        city: "jieyang",
+        lat: 23.538321,
+        lng: 116.355859,
+        short: "10 月 5—7 日 · 2 晚",
+        detail: "榕城区进贤门大道 17 号；豪华大床房，1 间。靠近揭阳古城、揭阳学宫和进贤门。",
+        note: "10 月 7 日从这里前往潮汕机场，国庆期间应预留堵车和安检缓冲。",
+        href: "https://m.ctrip.com/html5/hotel/hoteldetail/133532385.html"
+      }
+    ];
 
     const playPlaces = [
       {
@@ -704,6 +729,21 @@
       icon: pinIcon("airport", "airport", "✈", false)
     }).bindPopup(popupHtml("航空交通", airport.name, airport.note, "赶飞机不要依赖临时跨城网约车。")).addTo(airportLayer);
 
+    const hotelLayer = L.layerGroup().addTo(map);
+    const hotelMarkers = [];
+    hotels.forEach(hotel => {
+      const marker = L.marker([hotel.lat, hotel.lng], {
+        icon: pinIcon("hotel", hotel.city, "住", false)
+      }).bindPopup(popupHtml(
+        "已预订住宿 · " + hotel.short,
+        hotel.name,
+        hotel.detail + '<br><a href="' + hotel.href + '" target="_blank" rel="noopener noreferrer">查看酒店页面</a>',
+        hotel.note
+      ));
+      marker.addTo(hotelLayer);
+      hotelMarkers.push({ place: hotel, marker });
+    });
+
     const playLayer = L.layerGroup().addTo(map);
     const playMarkers = [];
     playPlaces.forEach(place => {
@@ -727,12 +767,10 @@
 
     const routePoints = [
       [airport.lat, airport.lng],
+      [hotels[0].lat, hotels[0].lng],
       [23.664454, 116.645261],
-      [23.539591, 116.588171],
-      [23.374688, 116.752430],
-      [23.359881, 116.706165],
-      [23.609080, 116.333978],
-      [23.544074, 116.333376],
+      [hotels[0].lat, hotels[0].lng],
+      [hotels[1].lat, hotels[1].lng],
       [airport.lat, airport.lng]
     ];
     const routeLayer = L.polyline(routePoints, {
@@ -741,10 +779,10 @@
       opacity: .76,
       dashArray: "7 10"
     }).bindPopup(popupHtml(
-      "当前住宿顺序",
-      "机场 → 潮州 → 汕头 → 揭阳 → 机场",
-      "虚线只表达行程先后，不代表铁路或公路的精确线路。",
-      "跨城交通仍按《潮汕车票.md》执行。"
+      "已订住宿顺序",
+      "机场 → 汕头（4 晚）→ 潮州往返 → 揭阳（2 晚）→ 机场",
+      "虚线只表达住宿与游玩先后，不代表铁路或公路的精确线路。",
+      "潮州不住宿；具体往返日期与交通方式仍需结合国庆车票确定。"
     )).addTo(map);
 
     L.control.layers(
@@ -755,6 +793,7 @@
         "补充动车站": secondaryStations,
         "吃玩主点": foodLayer,
         "玩": playLayer,
+        "已订住宿": hotelLayer,
         "机场": airportLayer,
         "当前路线示意": routeLayer
       },
@@ -768,6 +807,7 @@
         '<b>图例</b><br>' +
         '<i style="background:#e87824"></i>吃（主点及已核准附属点）<br>' +
         '<i style="background:#398761"></i>玩<br>' +
+        '<i style="background:#2f6fbb"></i>已订住宿<br>' +
         '<i style="background:#263a65"></i>动车站<br>' +
         '<i style="background:#8f4d8c"></i>机场／路线';
       return div;
@@ -785,6 +825,7 @@
     function renderList(city) {
       const list = document.getElementById("place-list");
       const allPlaces = [
+        ...hotelMarkers.map(item => ({ ...item, kind: "hotel" })),
         ...foodMarkers.map(item => ({
           ...item,
           kind: item.place.city === "chaozhou" ? "play" : "food"
@@ -800,8 +841,8 @@
         const button = document.createElement("button");
         button.className = "place-button";
         button.innerHTML =
-          '<b><span class="city-dot" style="background:' + (item.kind === "play" || item.place.city === "chaozhou" ? "#398761" : "#e87824") + '"></span>' + item.place.name + "</b>" +
-          "<small>" + (item.kind === "play" ? "玩 · " : "") + item.place.short + (item.place.pointCount
+          '<b><span class="city-dot" style="background:' + (item.kind === "hotel" ? "#2f6fbb" : item.kind === "play" || item.place.city === "chaozhou" ? "#398761" : "#e87824") + '"></span>' + item.place.name + "</b>" +
+          "<small>" + (item.kind === "hotel" ? "住 · " : item.kind === "play" ? "玩 · " : "") + item.place.short + (item.place.pointCount
             ? " · " + item.place.pointCount + " 个编号点"
             : item.kind === "food" ? " · 补充片区" : "") + "</small>";
         button.addEventListener("click", () => {
