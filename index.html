@@ -685,6 +685,13 @@
 
       grouped.forEach(point => {
         const idText = point.ids.join(" / ");
+        const videoHtml = point.ids
+          .filter(id => window.FOOD_VIDEOS && window.FOOD_VIDEOS[id])
+          .map(id => {
+            const video = window.FOOD_VIDEOS[id];
+            return '<br><b>视频时间：</b><a href="' + video.url + '" target="_blank" rel="noopener noreferrer">' + id + ' · ' + video.time + '</a>';
+          })
+          .join("");
         L.circleMarker([point.lat, point.lng], {
           radius: 5,
           color: "#ffffff",
@@ -698,7 +705,8 @@
             "已核准的附属编号点",
             idText + " · " + point.name,
             point.address + '<br><a href="' + point.mapUrl + '" target="_blank" rel="noopener">在高德地图中查看</a>' +
-              (point.sourceUrl ? ' · <a href="' + point.sourceUrl + '" target="_blank" rel="noopener">核验来源：' + point.sourceLabel + '</a>' : ' · 核验来源：高德地图'),
+              (point.sourceUrl ? ' · <a href="' + point.sourceUrl + '" target="_blank" rel="noopener">核验来源：' + point.sourceLabel + '</a>' : ' · 核验来源：高德地图') +
+              videoHtml,
             "归属主点：" + place.name + "。坐标来源及核验记录见《吃/ref/美食地点编号.md》。"
           ))
           .addTo(childFoodLayer);

@@ -27,3 +27,17 @@ window.FOOD_POINTS = {
   "HTS-41": { name: "仁和潮饼面包店", lat: 23.3512727, lng: 116.6674753, address: "汕头市金平区西堤路54号", mapUrl: "https://uri.amap.com/marker?position=116.6674753,23.3512727&name=%E4%BB%81%E5%92%8C%E6%BD%AE%E9%A5%BC%E9%9D%A2%E5%8C%85%E5%BA%97&coordinate=gaode&callnative=0", sourceUrl: "https://hk.trip.com/restaurant/china/shantou/detail/restaurant-20543621/", sourceLabel: "Trip.com" },
   "HTS-43": { name: "共和老洪豆花草粿水粿", lat: 23.356711, lng: 116.689288, address: "汕头市金平区联兴里左巷与共和路交叉口南约40米", mapUrl: "https://www.amap.com/place/B0FFHVQISW" }
 };
+
+// 只给已经能落到唯一坐标的附属点展示时间；完整时间表见「吃/ref/美食地点编号.md」。
+// “约”表示按画面切换核对的窗口，边界可能相差数秒。
+window.FOOD_VIDEOS = {
+  "DN-04": { time: "06:40–08:46", url: "https://www.bilibili.com/video/BV1ef421q7nw/?t=400" },
+  "DN-06": { time: "09:50–09:59（到店未吃）", url: "https://www.bilibili.com/video/BV1ef421q7nw/?t=590" },
+  "DN-08": { time: "10:55–12:29", url: "https://www.bilibili.com/video/BV1ef421q7nw/?t=655" },
+  "DN-09": { time: "12:30–约14:35", url: "https://www.bilibili.com/video/BV1ef421q7nw/?t=750" },
+  "YQ-02": { time: "05:09–06:43", url: "https://www.bilibili.com/video/BV18RJp6YEW4/?t=309" },
+  "YQ-05": { time: "10:19–10:55", url: "https://www.bilibili.com/video/BV18RJp6YEW4/?t=619" },
+  "HTS-18": { time: "约05:45–06:15", url: "https://www.bilibili.com/video/BV1sXZbYVETR/?t=345" },
+  "HTS-20": { time: "约06:20–09:10", url: "https://www.bilibili.com/video/BV1sXZbYVETR/?t=380" },
+  "HTS-32": { time: "约12:20–12:55", url: "https://www.bilibili.com/video/BV1sXZbYVETR/?t=740" }
+};
