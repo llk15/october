@@ -363,7 +363,7 @@
   <header class="topbar">
     <div class="eyebrow">2026 · 7日6夜</div>
     <h1>潮汕三市吃玩行地图</h1>
-    <p class="subtitle">汕头 4 晚 → 揭阳 2 晚｜潮州从汕头当日往返；主点 count 含 101 个攻略编号。虚线只表示行程顺序。</p>
+    <p class="subtitle">机场打车到汕头住宿｜汕头站动车到揭阳站｜揭阳住 2 晚；主点 count 含 101 个攻略编号。</p>
     <nav class="filters" aria-label="按城市查看">
       <button class="filter active" data-city="all">全部</button>
       <button class="filter" data-city="chaozhou">潮州</button>
@@ -765,25 +765,78 @@
       playMarkers.push({ place, marker });
     });
 
-    const routePoints = [
-      [airport.lat, airport.lng],
-      [hotels[0].lat, hotels[0].lng],
-      [23.664454, 116.645261],
-      [hotels[0].lat, hotels[0].lng],
-      [hotels[1].lat, hotels[1].lng],
-      [airport.lat, airport.lng]
-    ];
-    const routeLayer = L.polyline(routePoints, {
+    const shantouStation = stations.find(station => station.name === "汕头站");
+    const jieyangStation = stations.find(station => station.name === "揭阳站");
+    const roadStyle = {
       color: "#8f4d8c",
       weight: 3,
       opacity: .76,
       dashArray: "7 10"
-    }).bindPopup(popupHtml(
-      "已订住宿顺序",
-      "机场 → 汕头（4 晚）→ 潮州往返 → 揭阳（2 晚）→ 机场",
-      "虚线只表达住宿与游玩先后，不代表铁路或公路的精确线路。",
-      "潮州不住宿；具体往返日期与交通方式仍需结合国庆车票确定。"
-    )).addTo(map);
+    };
+    const railStyle = {
+      color: "#263a65",
+      weight: 4,
+      opacity: .9,
+      dashArray: "12 7"
+    };
+
+    const arrivalRoad = L.polyline([
+      [airport.lat, airport.lng],
+      [hotels[0].lat, hotels[0].lng]
+    ], roadStyle).bindPopup(popupHtml(
+      "10 月 1 日 · 打车",
+      "潮汕机场 → 汕头住宿",
+      "落地后打车前往巷里·悦禾民宿（汕头鸥汀店）。",
+      "民宿位于巷内，出发前向店家确认最近的车辆上下客点。"
+    ));
+
+    const shantouStationRoad = L.polyline([
+      [hotels[0].lat, hotels[0].lng],
+      [shantouStation.lat, shantouStation.lng]
+    ], roadStyle).bindPopup(popupHtml(
+      "10 月 5 日 · 市内接驳",
+      "汕头住宿 → 汕头站",
+      "退房后打车前往汕头站，乘动车去揭阳站。",
+      "按实际车次倒推离店时间，并预留国庆堵车和进站安检时间。"
+    ));
+
+    const trainRoute = L.polyline([
+      [shantouStation.lat, shantouStation.lng],
+      [jieyangStation.lat, jieyangStation.lng]
+    ], railStyle).bindPopup(popupHtml(
+      "10 月 5 日 · 动车",
+      "汕头站 → 揭阳站",
+      "两站之间乘动车，不按地图直线自驾。",
+      "车次与发到时间以 12306 最终出票信息为准。"
+    ));
+
+    const jieyangStationRoad = L.polyline([
+      [jieyangStation.lat, jieyangStation.lng],
+      [hotels[1].lat, hotels[1].lng]
+    ], roadStyle).bindPopup(popupHtml(
+      "10 月 5 日 · 市内接驳",
+      "揭阳站 → 揭阳住宿",
+      "到站后打车前往揭阳宾馆（揭阳古城店）。",
+      "酒店位于进贤门大道 17 号。"
+    ));
+
+    const returnRoad = L.polyline([
+      [hotels[1].lat, hotels[1].lng],
+      [airport.lat, airport.lng]
+    ], roadStyle).bindPopup(popupHtml(
+      "10 月 7 日 · 返程",
+      "揭阳住宿 → 潮汕机场",
+      "从揭阳宾馆打车前往潮汕机场。",
+      "国庆期间预留堵车和机场安检缓冲。"
+    ));
+
+    const routeLayer = L.featureGroup([
+      arrivalRoad,
+      shantouStationRoad,
+      trainRoute,
+      jieyangStationRoad,
+      returnRoad
+    ]).addTo(map);
 
     L.control.layers(
       { "OpenStreetMap": osm },
@@ -808,8 +861,8 @@
         '<i style="background:#e87824"></i>吃（主点及已核准附属点）<br>' +
         '<i style="background:#398761"></i>玩<br>' +
         '<i style="background:#2f6fbb"></i>已订住宿<br>' +
-        '<i style="background:#263a65"></i>动车站<br>' +
-        '<i style="background:#8f4d8c"></i>机场／路线';
+        '<i style="background:#263a65"></i>动车站／动车线<br>' +
+        '<i style="background:#8f4d8c"></i>机场／打车接驳';
       return div;
     };
     legend.addTo(map);
@@ -819,7 +872,7 @@
       chaozhou: L.latLngBounds([[23.50, 116.53], [24.25, 117.20]]),
       shantou: L.latLngBounds([[23.00, 116.35], [23.62, 117.15]]),
       jieyang: L.latLngBounds([[22.85, 115.60], [23.78, 116.62]]),
-      route: L.latLngBounds(routePoints)
+      route: routeLayer.getBounds()
     };
 
     function renderList(city) {
@@ -867,7 +920,7 @@
           maxZoom: city === "route" ? 10 : 11
         });
         renderList(city);
-        if (city === "route") routeLayer.openPopup();
+        if (city === "route") arrivalRoad.openPopup();
       });
     });
 
