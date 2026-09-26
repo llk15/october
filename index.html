@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#dfe9e9">
+  <title>潮汕三市｜吃玩行地图</title>
+  <link rel="stylesheet" href="assets/leaflet.css">
+  <style>
+    :root {
+      --ink: #17222b;
+      --muted: #687681;
+      --paper: #fbfaf6;
+      --line: rgba(23, 34, 43, .12);
+      --shantou: #147d92;
+      --chaozhou: #c4614c;
+      --jieyang: #a27b18;
+      --rail: #263a65;
+      --route: #8f4d8c;
+      --play: #398761;
+      --food: #e87824;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      color: var(--ink);
+      background: #dfe9e9;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      background: #dfe9e9;
+    }
+
+    .topbar {
+      position: absolute;
+      z-index: 900;
+      top: 18px;
+      left: 18px;
+      width: min(430px, calc(100vw - 36px));
+      padding: 18px 20px 16px;
+      border: 1px solid rgba(255, 255, 255, .72);
+      border-radius: 18px;
+      background: rgba(251, 250, 246, .93);
+      box-shadow: 0 16px 44px rgba(33, 57, 66, .18);
+      backdrop-filter: blur(14px);
+    }
+
+    .eyebrow {
+      margin-bottom: 5px;
+      color: var(--route);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Songti SC", "STSong", serif;
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 750;
+      letter-spacing: -.02em;
+    }
+
+    .subtitle {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 13px;
+    }
+
+    .filter {
+      appearance: none;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .74);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .filter:hover { transform: translateY(-1px); }
+
+    .filter.active {
+      color: white;
+      border-color: var(--ink);
+      background: var(--ink);
+    }
+
+    .panel {
+      position: absolute;
+      z-index: 890;
+      top: 205px;
+      left: 18px;
+      bottom: 22px;
+      width: min(330px, calc(100vw - 36px));
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, .7);
+      border-radius: 16px;
+      background: rgba(251, 250, 246, .91);
+      box-shadow: 0 14px 36px rgba(33, 57, 66, .16);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 5px 9px;
+    }
+
+    .panel-heading strong { font-size: 14px; }
+    .panel-heading span { color: var(--muted); font-size: 11px; }
+
+    .panel-title {
+      display: grid;
+      gap: 2px;
+    }
+
+    .panel-toggle {
+      display: none;
+      min-width: 58px;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .82);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .place-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .place-button {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .64);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .place-button:hover {
+      border-color: var(--line);
+      background: white;
+    }
+
+    .place-button b {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 13px;
+    }
+
+    .place-button small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .city-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 7px;
+      border-radius: 50%;
+    }
+
+    .map-marker-shell { background: transparent; border: 0; }
+
+    .pin {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border: 2px solid white;
+      border-radius: 50% 50% 50% 8px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(24, 35, 43, .28);
+      font-size: 12px;
+      font-weight: 800;
+      transform: rotate(-45deg);
+    }
+
+    .pin > span { transform: rotate(45deg); }
+    .pin.food { background: var(--food); }
+    .pin.play { background: var(--play); }
+    .pin.station { width: 30px; height: 30px; background: var(--rail); }
+    .pin.station.secondary { opacity: .72; transform: rotate(-45deg) scale(.86); }
+    .pin.airport { background: var(--route); }
+
+    .city-label {
+      padding: 3px 8px;
+      border: 1px solid rgba(255,255,255,.9);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 3px 12px rgba(31, 48, 54, .2);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-shadow: 0 1px 2px rgba(0,0,0,.2);
+      white-space: nowrap;
+    }
+
+    .city-label.shantou { background: rgba(20, 125, 146, .88); }
+    .city-label.chaozhou { background: rgba(196, 97, 76, .88); }
+    .city-label.jieyang { background: rgba(162, 123, 24, .88); }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      box-shadow: 0 12px 34px rgba(28, 44, 52, .22);
+    }
+
+    .leaflet-popup-content {
+      min-width: 210px;
+      margin: 15px 16px;
+      line-height: 1.5;
+    }
+
+    .popup-kicker {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .popup-title {
+      margin: 2px 0 7px;
+      font-size: 17px;
+      font-weight: 780;
+    }
+
+    .popup-image-link {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .popup-image {
+      display: block;
+      width: 100%;
+      height: 155px;
+      border-radius: 9px;
+      object-fit: cover;
+      background: #edf0ed;
+    }
+
+    .popup-source {
+      display: block;
+      margin-top: 3px;
+      font-size: 10px;
+      text-align: right;
+    }
+
+    .popup-body { color: #3f4c54; font-size: 12px; }
+    .popup-note { margin-top: 7px; color: #7a4d39; font-size: 11px; }
+
+    .legend {
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 12px;
+      background: rgba(251,250,246,.93);
+      box-shadow: 0 8px 24px rgba(33,57,66,.14);
+      color: #46545d;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 7px;
+      border-radius: 50%;
+    }
+
+    .leaflet-control-layers {
+      border: 0 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 24px rgba(33,57,66,.14) !important;
+    }
+
+    @media (max-width: 700px) {
+      .topbar {
+        top: max(10px, env(safe-area-inset-top));
+        left: max(10px, env(safe-area-inset-left));
+        width: calc(100vw - max(20px, env(safe-area-inset-left) + env(safe-area-inset-right)));
+        padding: 12px 14px;
+      }
+      h1 { font-size: clamp(21px, 7vw, 28px); }
+      .subtitle { display: none; }
+      .filters { gap: 6px; margin-top: 10px; }
+      .filter { min-height: 38px; padding: 7px 12px; touch-action: manipulation; }
+      .panel {
+        top: auto;
+        left: max(10px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        width: auto;
+        height: min(27dvh, 190px);
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        transition: height .2s ease;
+      }
+      .panel-toggle { display: block; }
+      body.panel-collapsed .panel {
+        height: 54px;
+        overflow: hidden;
+        padding-bottom: 8px;
+      }
+      body.panel-collapsed .panel-heading { padding-bottom: 3px; }
+      .place-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .place-button { min-height: 58px; touch-action: manipulation; }
+      .leaflet-control-layers { margin-top: 145px !important; }
+      .legend { display: none; }
+      .leaflet-popup-content { min-width: min(210px, calc(100vw - 86px)); }
+      .leaflet-control-zoom a { width: 34px; height: 34px; line-height: 34px; }
+    }
+
+    @media (max-width: 390px), (max-height: 640px) {
+      .eyebrow { display: none; }
+      .topbar { padding: 10px 12px; }
+      .filters { margin-top: 7px; }
+      .filter { min-height: 34px; padding: 5px 9px; }
+      .leaflet-control-layers { margin-top: 112px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="潮汕三市地图"></div>
+
+  <header class="topbar">
+    <div class="eyebrow">2026 · 7日6夜</div>
+    <h1>潮汕三市吃玩行地图</h1>
+    <p class="subtitle">潮州 → 汕头 → 揭阳｜主点 count 含 101 个攻略编号；仅展开 25 个已核准坐标的编号。虚线只表示行程顺序。</p>
+    <nav class="filters" aria-label="按城市查看">
+      <button class="filter active" data-city="all">全部</button>
+      <button class="filter" data-city="chaozhou">潮州</button>
+      <button class="filter" data-city="shantou">汕头</button>
+      <button class="filter" data-city="jieyang">揭阳</button>
+      <button class="filter" data-city="route">当前路线</button>
+    </nav>
+  </header>
+
+  <aside class="panel">
+    <div class="panel-heading">
+      <div class="panel-title">
+        <strong>重点吃玩地点</strong>
+        <span id="visible-count">29 个地点</span>
+      </div>
+      <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true" aria-controls="place-list">收起</button>
+    </div>
+    <div class="place-list" id="place-list"></div>
+  </aside>
+
+  <script src="assets/leaflet.js"></script>
+  <script src="assets/潮汕边界.js"></script>
+  <script src="assets/美食点.js"></script>
+  <script src="assets/取景地.js"></script>
+  <script>
+    const colors = {
+      shantou: "#147d92",
+      chaozhou: "#c4614c",
+      jieyang: "#a27b18"
+    };
+
+    const cityMeta = {
+      "440500": { key: "shantou", name: "汕头市", center: [23.31, 116.69] },
+      "445100": { key: "chaozhou", name: "潮州市", center: [23.82, 116.68] },
+      "445200": { key: "jieyang", name: "揭阳市", center: [23.33, 116.18] }
+    };
+
+    const stations = [
+      { name: "潮汕站", city: "chaozhou", lat: 23.539591, lng: 116.588171, primary: true, note: "潮州古城的主要动车站；距古城约18—20公里，仍需约30—40分钟接驳。" },
+      { name: "汕头站", city: "shantou", lat: 23.374688, lng: 116.752430, primary: true, note: "汕头市区主站；去珠江路、广兴市场最方便。" },
+      { name: "汕头南站", city: "shantou", lat: 23.229731, lng: 116.677315, primary: false, note: "位于濠江区；去达濠可比较此站与汕头站的实际车次。" },
+      { name: "潮阳站", city: "shantou", lat: 23.383450, lng: 116.417350, primary: false, note: "位于谷饶镇，服务汕头西南部；不适合作为汕头中心城区到达站。" },
+      { name: "潮南站", city: "shantou", lat: 23.136310, lng: 116.527710, primary: false, note: "位于陇田镇，服务潮南南部；当前市区行程通常用不到。" },
+      { name: "揭阳站", city: "jieyang", lat: 23.609080, lng: 116.333978, primary: true, note: "揭阳老城的主要动车站；不要误选目前暂停营业的揭阳南站。" },
+      { name: "揭阳机场站", city: "jieyang", lat: 23.547580, lng: 116.512260, primary: true, note: "机场地下高铁站，适合空铁换乘；去揭阳老城应买到揭阳站。" },
+      { name: "普宁站", city: "jieyang", lat: 23.269400, lng: 116.194640, primary: false, note: "去普宁流沙城区最方便，约4—8公里。" },
+      { name: "惠来站", city: "jieyang", lat: 22.995111, lng: 116.286702, primary: false, note: "服务惠来县；距隆江镇约13—15公里，但隆江不在当前行程。" }
+    ];
+
+    function idRange(prefix, start, end) {
+      return Array.from({ length: end - start + 1 }, (_, index) =>
+        prefix + "-" + String(start + index).padStart(2, "0")
+      );
+    }
+
+    const foodPlaces = [
+      {
+        name: "牌坊街／潮州古城", city: "chaozhou", lat: 23.664454, lng: 116.645261,
+        pointIds: [], pointCount: 0, ids: "无（补充片区）",
+        short: "潮州核心", detail: "牌坊街、开元寺、广济桥周边；适合早晚错峰吃粿、肠粉、卤鹅、甜汤和工夫茶。",
+        note: "国庆10:00—22:00可能实施车辆管控。"
+      },
+      {
+        name: "西马路", city: "chaozhou", lat: 23.667317, lng: 116.642086,
+        pointIds: [], pointCount: 0, ids: "无（补充片区）",
+        short: "老城小吃街", detail: "适合找蚝烙、粿条、粿汁等潮汕共通小吃，可和牌坊街步行串联。",
+        note: "现有攻略没有锁定潮州单店，先按片区选择。"
+      },
+      {
+        name: "官塘镇", city: "chaozhou", lat: 23.619242, lng: 116.722939,
+        pointIds: [], pointCount: 0, ids: "无（补充片区）",
+        short: "牛肉火锅备选", detail: "以牛肉火锅闻名的外围片区；与古城不在同一方向，需单独评估时间。",
+        note: "国庆不建议只为一顿饭临时跨区叫车。"
+      },
+      {
+        name: "汕头站东片区", city: "shantou", lat: 23.383500, lng: 116.750000,
+        pointIds: ["DN-01", ...idRange("HTS", 27, 31), "HTS-42"],
+        pointCount: 7, ids: "DN-01；HTS-27—HTS-31；HTS-42",
+        short: "到站后方便", detail: "珠江路豆浆、火锅、砂锅粥、猪脚饭和肠粉；广兴市场小吃；新溪牛肉火锅。",
+        note: "范围从汕头站周边延伸到新溪，跨区前应再看实际车程。"
+      },
+      {
+        name: "鸥汀", city: "shantou", lat: 23.417574, lng: 116.712867,
+        pointIds: idRange("HTS", 1, 10), pointCount: 10, ids: "HTS-01—HTS-10",
+        short: "粥、鹅肉、甜品", detail: "辛鲜火足肉、别人小炒、富兴小食、老三麦粿、亚岳朥粕粥、李记豆花、塔记糖葱薄饼等。",
+        note: "店铺分散，适合专门留半天。"
+      },
+      {
+        name: "老市区／小公园", city: "shantou", lat: 23.359400, lng: 116.691000,
+        pointIds: ["DN-03", ...idRange("HTS", 11, 19), ...idRange("HTS", 38, 41), "HTS-43", "YQ-10"],
+        pointCount: 16, ids: "DN-03；HTS-11—HTS-19；HTS-38—HTS-41；HTS-43；YQ-10",
+        short: "早餐、蚝烙、冰品", detail: "合并三中/外马路、华坞路、小公园和石炮台：牛杂、肠粉、油粿、蚝烙、童子鸡、冰品和潮饼。",
+        note: "适合按步行加短途车串联；国庆核心景区可能拥堵。"
+      },
+      {
+        name: "金珠园／广厦", city: "shantou", lat: 23.387000, lng: 116.716000,
+        pointIds: ["DN-04", "YQ-02", ...idRange("HTS", 20, 26)],
+        pointCount: 9, ids: "DN-04；YQ-02；HTS-20—HTS-26",
+        short: "正餐、甜汤、三角粿", detail: "金珠园三角粿；广厦/月季园一带的综合餐馆、潮汕打冷、甜汤、挫冰炸串和牛肉串。",
+        note: "各店分布在住宅区周边。"
+      },
+      {
+        name: "龙眼南路／梅园／玉兰园", city: "shantou", lat: 23.365500, lng: 116.705000,
+        pointIds: ["DN-02", ...idRange("DN", 5, 8), "YQ-04", "YQ-05", "YQ-09"],
+        pointCount: 8, ids: "DN-02、DN-05—DN-08；YQ-04、YQ-05、YQ-09",
+        short: "肠粉、甜汤、粿汁", detail: "老式冰、特色咖啡、糖葱薄饼、肠粉、老胡甜汤和通兴粿汁。",
+        note: "三个相邻生活区合并，适合从万象城方向展开。"
+      },
+      {
+        name: "达濠", city: "shantou", lat: 23.282133, lng: 116.731455,
+        pointIds: idRange("HTS", 32, 37), pointCount: 6, ids: "HTS-32—HTS-37",
+        short: "鱼丸、三角粿", detail: "达濠李老二、晶华鱼丸、茂发饼家、贵喜甜汤；三角粿沿途买。",
+        note: "到汕头南站约12—15公里，到汕头站约15—18公里。"
+      },
+      {
+        name: "揭阳老城／进贤门", city: "jieyang", lat: 23.544074, lng: 116.333376,
+        pointIds: ["DN-09", ...idRange("HTJ", 10, 44)], pointCount: 36, ids: "DN-09；HTJ-10—HTJ-44",
+        short: "揭阳核心", detail: "肠粉、粿品、炸鸡翅、蒸饺、甜汤最集中；攻略中多数揭阳市区店可从这里展开。",
+        note: "距揭阳站约9—12公里。"
+      },
+      {
+        name: "普宁流沙城区", city: "jieyang", lat: 23.297789, lng: 116.166246,
+        pointIds: idRange("HTJ", 3, 5), pointCount: 3, ids: "HTJ-03—HTJ-05",
+        short: "肠粉、火锅、饮品", detail: "老二肠粉、流沙鲜汇火锅、极昊珍珠奶茶。",
+        note: "距普宁站约4—8公里；不在当前住宿主线。"
+      },
+      {
+        name: "棉湖镇", city: "jieyang", lat: 23.442140, lng: 116.128822,
+        pointIds: ["HTJ-06"], pointCount: 1, ids: "HTJ-06",
+        short: "富桂冰吧", detail: "攻略目前只锁定富桂冰吧，单店密度不足以支撑专程远线。",
+        note: "到普宁站约31公里，到揭阳站约35公里。"
+      },
+      {
+        name: "白塔镇", city: "jieyang", lat: 23.568057, lng: 116.206980,
+        pointIds: idRange("HTJ", 7, 9), pointCount: 3, ids: "HTJ-07—HTJ-09",
+        short: "白塔牛肉", detail: "龙兴饭店及白塔牛肉；乌笔埔寨牛肉、联西牛肉等属于作者转述，并非本次实测。",
+        note: "距揭阳站约18—22公里。"
+      },
+      {
+        name: "隆江镇", city: "jieyang", lat: 22.994730, lng: 116.186530,
+        pointIds: idRange("HTJ", 1, 2), pointCount: 2, ids: "HTJ-01—HTJ-02",
+        short: "猪脚饭、炸豆干", detail: "阿许猪脚饭、肥妹炸豆干；集贸市场内还有薯粉饺、绿豆饼等。",
+        note: "距离较远，时间不充裕时不建议专程前往。"
+      }
+    ];
+
+    const airport = {
+      name: "揭阳潮汕国际机场", lat: 23.5528, lng: 116.5033,
+      note: "10月1日抵达、10月7日返程；机场与揭阳机场站不是同一个地图点。"
+    };
+
+    const playPlaces = [
+      {
+        name: "凤凰镇", city: "chaozhou", lat: 23.903503, lng: 116.702906,
+        short: "凤凰单丛茶乡",
+        detail: "凤凰山南麓的单丛茶产地。适合在镇区喝茶，并顺带吃凤凰浮豆干、畲鹅粉和糟肉。",
+        note: "此点为凤凰镇镇区；凤凰天池、乌岽茶区还需继续进山。从潮州古城出发通常应按半天行程安排。"
+      },
+      ...window.FILMING_LOCATIONS
+    ];
+
+    const map = L.map("map", {
+      zoomControl: false,
+      minZoom: 8,
+      maxZoom: 17
+    }).setView([23.43, 116.45], 9);
+
+    L.control.zoom({ position: "topright" }).addTo(map);
+
+    const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    map.createPane("boundaries");
+    map.getPane("boundaries").style.zIndex = 310;
+    map.getPane("boundaries").style.pointerEvents = "none";
+
+    const boundaryLayer = L.geoJSON(window.CHAOSHAN_BOUNDARIES, {
+      pane: "boundaries",
+      style(feature) {
+        const meta = cityMeta[String(feature.properties.adcode)];
+        return {
+          color: colors[meta.key],
+          weight: 2.2,
+          opacity: .9,
+          fillColor: colors[meta.key],
+          fillOpacity: .105
+        };
+      }
+    }).addTo(map);
+
+    const labelLayer = L.layerGroup().addTo(map);
+    Object.values(cityMeta).forEach(city => {
+      L.marker(city.center, {
+        interactive: false,
+        icon: L.divIcon({
+          className: "map-marker-shell",
+          html: '<div class="city-label ' + city.key + '">' + city.name + "</div>",
+          iconSize: [82, 26],
+          iconAnchor: [41, 13]
+        })
+      }).addTo(labelLayer);
+    });
+
+    function pinIcon(type, city, text, secondary) {
+      return L.divIcon({
+        className: "map-marker-shell",
+        html: '<div class="pin ' + type + " " + city + (secondary ? " secondary" : "") + '"><span>' + text + "</span></div>",
+        iconSize: [30, 30],
+        iconAnchor: [9, 27],
+        popupAnchor: [6, -25]
+      });
+    }
+
+    function popupHtml(kicker, title, body, note, media) {
+      const mediaHtml = media
+        ? '<a class="popup-image-link" href="' + media.href + '" target="_blank" rel="noopener noreferrer">' +
+          '<img class="popup-image" src="' + media.src + '" alt="' + media.alt + '" loading="lazy">' +
+          '<span class="popup-source">配图来源：' + media.label + '</span></a>'
+        : "";
+      return '<div class="popup-kicker">' + kicker + '</div>' +
+        '<div class="popup-title">' + title + '</div>' +
+        mediaHtml +
+        '<div class="popup-body">' + body + '</div>' +
+        (note ? '<div class="popup-note">' + note + "</div>" : "");
+    }
+
+    const primaryStations = L.layerGroup().addTo(map);
+    const secondaryStations = L.layerGroup().addTo(map);
+    stations.forEach(station => {
+      const marker = L.marker([station.lat, station.lng], {
+        icon: pinIcon("station", station.city, "站", !station.primary)
+      }).bindPopup(popupHtml(
+        station.primary ? "主行程动车站" : "补充动车站",
+        station.name,
+        station.note,
+        station.primary ? "国庆车次与停靠以12306为准。" : "当前行程通常无需使用。"
+      ));
+      marker.addTo(station.primary ? primaryStations : secondaryStations);
+    });
+
+    const foodLayer = L.layerGroup().addTo(map);
+    const childFoodLayer = L.layerGroup().addTo(map);
+    const foodMarkers = [];
+
+    function confirmedPoints(place) {
+      return place.pointIds
+        .filter(id => window.FOOD_POINTS[id])
+        .map(id => ({ id, ...window.FOOD_POINTS[id] }));
+    }
+
+    // 餐饮坐标来自高德或携程页面中的高德坐标（GCJ-02）；
+    // Leaflet 底图是 OpenStreetMap（WGS-84），显示前需转换以避免数百米偏移。
+    function gcj02ToWgs84(lat, lng) {
+      const a = 6378245.0;
+      const ee = 0.006693421622965943;
+      const pi = Math.PI;
+      const transformLat = (x, y) => {
+        let value = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+        value += (20 * Math.sin(6 * x * pi) + 20 * Math.sin(2 * x * pi)) * 2 / 3;
+        value += (20 * Math.sin(y * pi) + 40 * Math.sin(y / 3 * pi)) * 2 / 3;
+        value += (160 * Math.sin(y / 12 * pi) + 320 * Math.sin(y * pi / 30)) * 2 / 3;
+        return value;
+      };
+      const transformLng = (x, y) => {
+        let value = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+        value += (20 * Math.sin(6 * x * pi) + 20 * Math.sin(2 * x * pi)) * 2 / 3;
+        value += (20 * Math.sin(x * pi) + 40 * Math.sin(x / 3 * pi)) * 2 / 3;
+        value += (150 * Math.sin(x / 12 * pi) + 300 * Math.sin(x / 30 * pi)) * 2 / 3;
+        return value;
+      };
+      let dLat = transformLat(lng - 105, lat - 35);
+      let dLng = transformLng(lng - 105, lat - 35);
+      const radLat = lat / 180 * pi;
+      let magic = Math.sin(radLat);
+      magic = 1 - ee * magic * magic;
+      const sqrtMagic = Math.sqrt(magic);
+      dLat = dLat * 180 / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
+      dLng = dLng * 180 / (a / sqrtMagic * Math.cos(radLat) * pi);
+      return { lat: lat * 2 - (lat + dLat), lng: lng * 2 - (lng + dLng) };
+    }
+
+    function showChildPoints(place) {
+      childFoodLayer.clearLayers();
+      const points = confirmedPoints(place);
+      if (!points.length) return;
+
+      const grouped = new Map();
+      points.forEach(point => {
+        const displayPoint = gcj02ToWgs84(point.lat, point.lng);
+        const key = displayPoint.lat.toFixed(6) + "," + displayPoint.lng.toFixed(6);
+        if (!grouped.has(key)) grouped.set(key, { ...point, ...displayPoint, ids: [] });
+        grouped.get(key).ids.push(point.id);
+      });
+
+      grouped.forEach(point => {
+        const idText = point.ids.join(" / ");
+        L.circleMarker([point.lat, point.lng], {
+          radius: 5,
+          color: "#ffffff",
+          weight: 1.5,
+          fillColor: "#e87824",
+          fillOpacity: 0.96,
+          bubblingMouseEvents: false
+        })
+          .bindTooltip("<b>" + idText + "</b> · " + point.name, { sticky: true })
+          .bindPopup(popupHtml(
+            "已核准的附属编号点",
+            idText + " · " + point.name,
+            point.address + '<br><a href="' + point.mapUrl + '" target="_blank" rel="noopener">在高德地图中查看</a>' +
+              (point.sourceUrl ? ' · <a href="' + point.sourceUrl + '" target="_blank" rel="noopener">核验来源：' + point.sourceLabel + '</a>' : ' · 核验来源：高德地图'),
+            "归属主点：" + place.name + "。坐标来源及核验记录见《吃/ref/美食地点编号.md》。"
+          ))
+          .addTo(childFoodLayer);
+      });
+    }
+
+    foodPlaces.forEach(place => {
+      const confirmedCount = confirmedPoints(place).length;
+      const markerType = place.city === "chaozhou" ? "play" : "food";
+      const marker = L.marker([place.lat, place.lng], {
+        icon: pinIcon(markerType, place.city, place.city === "chaozhou" ? "玩" : "吃", false)
+      }).bindPopup(popupHtml(
+        cityMeta[place.city === "shantou" ? "440500" : place.city === "chaozhou" ? "445100" : "445200"].name + " · " + place.short,
+        place.name,
+        place.detail + (place.pointCount
+          ? "<br><b>包含 " + place.pointCount + " 个编号点：</b>" + place.ids +
+            "<br><b>已核准并显示：</b>" + confirmedCount + " 个编号；其余未确认具体 POI 的编号不显示附属点。"
+          : "<br><b>补充片区：</b>未纳入四份攻略编号"),
+        place.note
+      ));
+      marker.on("click", () => showChildPoints(place));
+      marker.addTo(foodLayer);
+      foodMarkers.push({ place, marker });
+    });
+
+    const airportLayer = L.layerGroup().addTo(map);
+    L.marker([airport.lat, airport.lng], {
+      icon: pinIcon("airport", "airport", "✈", false)
+    }).bindPopup(popupHtml("航空交通", airport.name, airport.note, "赶飞机不要依赖临时跨城网约车。")).addTo(airportLayer);
+
+    const playLayer = L.layerGroup().addTo(map);
+    const playMarkers = [];
+    playPlaces.forEach(place => {
+      const marker = L.marker([place.lat, place.lng], {
+        icon: pinIcon("play", place.city, "玩", false)
+      }).bindPopup(popupHtml(
+        place.name === "凤凰镇" ? "游玩点 · 茶乡体验" : "玩 · 《给阿嬷的情书》取景地",
+        place.name,
+        place.detail,
+        place.note,
+        place.image ? {
+          src: place.image,
+          alt: place.name + "实景配图",
+          href: window.FILMING_SOURCE.url,
+          label: window.FILMING_SOURCE.name
+        } : null
+      ));
+      marker.addTo(playLayer);
+      playMarkers.push({ place, marker });
+    });
+
+    const routePoints = [
+      [airport.lat, airport.lng],
+      [23.664454, 116.645261],
+      [23.539591, 116.588171],
+      [23.374688, 116.752430],
+      [23.359881, 116.706165],
+      [23.609080, 116.333978],
+      [23.544074, 116.333376],
+      [airport.lat, airport.lng]
+    ];
+    const routeLayer = L.polyline(routePoints, {
+      color: "#8f4d8c",
+      weight: 3,
+      opacity: .76,
+      dashArray: "7 10"
+    }).bindPopup(popupHtml(
+      "当前住宿顺序",
+      "机场 → 潮州 → 汕头 → 揭阳 → 机场",
+      "虚线只表达行程先后，不代表铁路或公路的精确线路。",
+      "跨城交通仍按《潮汕车票.md》执行。"
+    )).addTo(map);
+
+    L.control.layers(
+      { "OpenStreetMap": osm },
+      {
+        "三市边界": boundaryLayer,
+        "主行程动车站": primaryStations,
+        "补充动车站": secondaryStations,
+        "吃玩主点": foodLayer,
+        "玩": playLayer,
+        "机场": airportLayer,
+        "当前路线示意": routeLayer
+      },
+      { position: "topright", collapsed: true }
+    ).addTo(map);
+
+    const legend = L.control({ position: "bottomright" });
+    legend.onAdd = function() {
+      const div = L.DomUtil.create("div", "legend");
+      div.innerHTML =
+        '<b>图例</b><br>' +
+        '<i style="background:#e87824"></i>吃（主点及已核准附属点）<br>' +
+        '<i style="background:#398761"></i>玩<br>' +
+        '<i style="background:#263a65"></i>动车站<br>' +
+        '<i style="background:#8f4d8c"></i>机场／路线';
+      return div;
+    };
+    legend.addTo(map);
+
+    const cityBounds = {
+      all: boundaryLayer.getBounds(),
+      chaozhou: L.latLngBounds([[23.50, 116.53], [24.25, 117.20]]),
+      shantou: L.latLngBounds([[23.00, 116.35], [23.62, 117.15]]),
+      jieyang: L.latLngBounds([[22.85, 115.60], [23.78, 116.62]]),
+      route: L.latLngBounds(routePoints)
+    };
+
+    function renderList(city) {
+      const list = document.getElementById("place-list");
+      const allPlaces = [
+        ...foodMarkers.map(item => ({
+          ...item,
+          kind: item.place.city === "chaozhou" ? "play" : "food"
+        })),
+        ...playMarkers.map(item => ({ ...item, kind: "play" }))
+      ];
+      const visible = allPlaces.filter(item => city === "all" || city === "route" || item.place.city === city);
+      const visiblePoints = visible.reduce((sum, item) => sum + (item.place.pointCount || 0), 0);
+      document.getElementById("visible-count").textContent =
+        visible.length + " 个地点 · " + visiblePoints + " 个美食编号点";
+      list.innerHTML = "";
+      visible.forEach(item => {
+        const button = document.createElement("button");
+        button.className = "place-button";
+        button.innerHTML =
+          '<b><span class="city-dot" style="background:' + (item.kind === "play" || item.place.city === "chaozhou" ? "#398761" : "#e87824") + '"></span>' + item.place.name + "</b>" +
+          "<small>" + (item.kind === "play" ? "玩 · " : "") + item.place.short + (item.place.pointCount
+            ? " · " + item.place.pointCount + " 个编号点"
+            : item.kind === "food" ? " · 补充片区" : "") + "</small>";
+        button.addEventListener("click", () => {
+          map.panTo([item.place.lat, item.place.lng], { animate: true, duration: .5 });
+          if (item.kind === "food") showChildPoints(item.place);
+          else childFoodLayer.clearLayers();
+          item.marker.openPopup();
+        });
+        list.appendChild(button);
+      });
+    }
+
+    document.querySelectorAll(".filter").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        const city = button.dataset.city;
+        childFoodLayer.clearLayers();
+        map.fitBounds(cityBounds[city], {
+          paddingTopLeft: window.innerWidth > 700 ? [360, 150] : [20, 150],
+          paddingBottomRight: [30, window.innerWidth > 700 ? 30 : 180],
+          maxZoom: city === "route" ? 10 : 11
+        });
+        renderList(city);
+        if (city === "route") routeLayer.openPopup();
+      });
+    });
+
+    const panelToggle = document.getElementById("panel-toggle");
+    panelToggle.addEventListener("click", () => {
+      const collapsed = document.body.classList.toggle("panel-collapsed");
+      panelToggle.textContent = collapsed ? "展开" : "收起";
+      panelToggle.setAttribute("aria-expanded", String(!collapsed));
+      window.setTimeout(() => map.invalidateSize({ pan: false }), 220);
+    });
+
+    renderList("all");
+    map.fitBounds(cityBounds.all, {
+      paddingTopLeft: window.innerWidth > 700 ? [360, 150] : [20, 140],
+      paddingBottomRight: window.innerWidth > 700 ? [40, 40] : [20, 170]
+    });
+  </script>
+</body>
+</html>
