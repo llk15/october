@@ -385,6 +385,7 @@
   </aside>
 
   <script src="assets/leaflet.js"></script>
+  <script src="assets/protomaps-leaflet.js"></script>
   <script src="assets/潮汕边界.js"></script>
   <script src="assets/美食点.js"></script>
   <script src="assets/取景地.js"></script>
@@ -517,14 +518,14 @@
 
     const hotels = [
       {
-        name: "巷里·悦禾民宿（汕头鸥汀店）",
+        name: "全季酒店（汕头高铁站店）",
         city: "shantou",
-        lat: 23.417376,
-        lng: 116.717135,
+        lat: 23.384372,
+        lng: 116.744240,
         short: "10 月 1—5 日 · 4 晚",
-        detail: "龙湖区鸥汀街道鸥上池仔内一横 2 号；悦享巨幕影院房（全屋家电＋功夫茶具），1 间。",
-        note: "位于鸥汀古城巷内；抵达、跨城或携带行李时，提前向民宿确认车辆可达的最近上下客点。",
-        href: "https://m.ctrip.com/html5/hotel/hoteldetail/133394013.html"
+        detail: "龙湖区长江路 187 号福田里 4 栋；距汕头站约 1.2—1.5 公里。",
+        note: "靠近汕头站；10 月 5 日乘动车前往揭阳时，仍应预留国庆堵车和进站安检时间。",
+        href: "https://m.ctrip.com/html5/hotel/hoteldetail/96552781.html"
       },
       {
         name: "揭阳宾馆（揭阳古城店）",
@@ -551,14 +552,19 @@
     const map = L.map("map", {
       zoomControl: false,
       minZoom: 8,
-      maxZoom: 17
+      maxZoom: 15
     }).setView([23.43, 116.45], 9);
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
+    const basemap = protomapsL.leafletLayer({
+      url: "assets/潮汕底图.pmtiles",
+      flavor: "light",
+      lang: "zh-Hans",
+      minZoom: 8,
+      maxZoom: 15,
+      bounds: [[22.886182, 115.606563], [24.232804, 117.318610]],
+      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
     map.createPane("boundaries");
@@ -794,8 +800,8 @@
     ], roadStyle).bindPopup(popupHtml(
       "10 月 1 日 · 打车",
       "潮汕机场 → 汕头住宿",
-      "落地后打车前往巷里·悦禾民宿（汕头鸥汀店）。",
-      "民宿位于巷内，出发前向店家确认最近的车辆上下客点。"
+      "落地后打车前往全季酒店（汕头高铁站店）。",
+      "酒店位于龙湖区长江路 187 号福田里 4 栋。"
     ));
 
     const shantouStationRoad = L.polyline([
@@ -847,7 +853,7 @@
     ]).addTo(map);
 
     L.control.layers(
-      { "OpenStreetMap": osm },
+      { "本地潮汕底图": basemap },
       {
         "三市边界": boundaryLayer,
         "主行程动车站": primaryStations,

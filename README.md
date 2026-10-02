@@ -2,24 +2,17 @@
 
 ## 打开方式
 
-直接双击 [index.html](index.html)。原来的 `潮汕三市地图.html` 也保留为兼容入口，会自动转到新版首页。
+在线访问：[https://llk15.github.io/october/](https://llk15.github.io/october/)。
 
-- 三市行政边界、标记、筛选和弹窗可离线显示。
-- 街道底图来自 OpenStreetMap，加载底图时需要联网。
+- 本地预览需在当前目录启动支持 HTTP Range 请求的静态服务器，例如运行 `npx serve .` 后访问命令显示的本地地址；不能直接双击 HTML，也不要使用不支持 Range 的旧版 `python3 -m http.server`。
+- 潮汕三市底图、行政边界、标记、筛选和弹窗均保存在仓库内；加载地图不再访问外部瓦片服务器。
+- 本地底图覆盖汕头、潮州、揭阳三市完整行政范围，支持 8—15 级缩放。
 - 左上角可按潮州、汕头、揭阳或当前路线缩放；右上角可开关各图层。
 - 手机端底部地点列表可以“收起／展开”，并已适配刘海屏与底部安全区域。
 
 ## 发布到 GitHub Pages
 
-此目录已经是可直接发布的静态网站，`index.html` 是默认首页，`.nojekyll` 用于让 GitHub Pages 原样发布所有静态文件。
-
-1. 在 GitHub 新建一个公开仓库，例如 `chaoshan-map`。
-2. 把本目录中的全部文件和 `assets/` 文件夹上传到仓库根目录。
-3. 打开仓库的 **Settings → Pages**，在 **Build and deployment** 中选择 **Deploy from a branch**。
-4. 分支选择 `main`，目录选择 `/(root)`，保存并等待发布完成。
-5. 页面地址通常是 `https://你的用户名.github.io/chaoshan-map/`，可直接用手机浏览器打开和分享。
-
-更新地图后重新上传或推送文件，GitHub Pages 会自动重新发布。底图仍需联网，页面本身不需要后端服务。
+本仓库已通过 GitHub Pages 发布，`index.html` 是默认首页，`.nojekyll` 用于让 Pages 原样发布静态文件。推送到 `main` 分支后会自动重新部署；地图运行时不需要后端服务或外部底图接口。
 
 ## 地图内容
 
@@ -32,7 +25,7 @@
 - 四份攻略共整理 109 个编号点；当前 14 个主点的 count 共归入 101 个编号。
 - 点击主要吃玩片区后，只展开已在高德、携程、Trip.com 等公开页面中核准到唯一门店、地址和坐标的附属编号点；当前核准 25 个编号，对应 23 个实际标记（含同店重复来源编号）。
 - 选中主片区或侧栏项目时只展开、平移，不主动放大地图。
-- 2 个已订住宿标记：巷里·悦禾民宿（汕头鸥汀店，10 月 1—5 日）和揭阳宾馆（揭阳古城店，10 月 5—7 日）。
+- 2 个已订住宿标记：全季酒店（汕头高铁站店，10 月 1—5 日）和揭阳宾馆（揭阳古城店，10 月 5—7 日）。
 - 当前交通连线：机场打车到汕头住宿；汕头住宿打车到汕头站，动车到揭阳站，再打车到揭阳住宿；返程从揭阳住宿打车到机场。
 - 潮州保留为当日往返游玩目的地，不混入住宿和换城交通连线。
 
@@ -56,6 +49,9 @@
 - `index.html`：地图主页面，也是 GitHub Pages 默认入口。
 - `潮汕三市地图.html`：旧文件名的兼容跳转页。
 - `assets/leaflet.css`、`assets/leaflet.js`：Leaflet 1.9.4 本地资源。
+- `assets/protomaps-leaflet.js`：Protomaps Leaflet 5.1.0 本地矢量底图渲染器。
+- `assets/protomaps-leaflet.LICENSE.txt`：Protomaps Leaflet 的 BSD 3-Clause 许可证。
+- `assets/潮汕底图.pmtiles`：从 Protomaps 2026-10-01 全球构建中裁剪的潮汕三市本地矢量底图，覆盖 8—15 级显示所需数据。
 - `assets/潮汕边界.js`：汕头、潮州、揭阳行政边界数据。
 - `assets/美食点.js`：已核准附属编号点的店名、地址、坐标和高德链接。
 - `../吃/ref/美食地点编号.md`：餐饮编号、逐项核验结果、证据来源及暂缓原因（唯一核验台账）。
@@ -67,7 +63,7 @@
 ## 数据来源
 
 - 三市行政边界：[阿里云 DataV 行政区划边界](https://geo.datav.aliyun.com/areas_v3/bound/440000_full.json)，行政区代码为汕头 440500、潮州 445100、揭阳 445200。
-- 底图：[OpenStreetMap](https://www.openstreetmap.org/)。
+- 底图数据：[OpenStreetMap](https://www.openstreetmap.org/)，通过 [Protomaps](https://protomaps.com/) PMTiles 格式裁剪并在浏览器本地渲染。
 - [潮汕站位置（高德地图）](https://ditu.amap.com/place/B03000MXLA)
 - [汕头南站位置（高德地图）](https://www.amap.com/place/B0HA29SEPN)
 - [揭阳站位置及运营状态](https://www.amap.com/place/B0FFLAAPVS)
@@ -80,4 +76,4 @@
 - 片区主点坐标由 OpenStreetMap Nominatim 及公开地图资料人工核对。
 - 附属餐饮点优先按“攻略店名 + 城市/片区”检索高德，并用携程、Trip.com、地方媒体等公开资料补证；只有能唯一确认门店和坐标的项目才进入地图。
 
-* 数据核对日期：2026-09-26。车站停靠和国庆交通以 12306 与当日导航为准。
+* 数据核对日期：2026-10-02。车站停靠和国庆交通以 12306 与当日导航为准。
