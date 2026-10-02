@@ -557,8 +557,15 @@
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
+    const localPreview = location.protocol === "file:" ||
+      location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const forceBundledBasemap = new URLSearchParams(location.search).has("localTiles");
+    const basemapUrl = localPreview && !forceBundledBasemap
+      ? "https://llk15.github.io/october/assets/%E6%BD%AE%E6%B1%95%E5%BA%95%E5%9B%BE.pmtiles"
+      : "assets/潮汕底图.pmtiles";
+
     const basemap = protomapsL.leafletLayer({
-      url: "assets/潮汕底图.pmtiles",
+      url: basemapUrl,
       flavor: "light",
       lang: "zh-Hans",
       minZoom: 8,

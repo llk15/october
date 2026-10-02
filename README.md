@@ -4,7 +4,9 @@
 
 在线访问：[https://llk15.github.io/october/](https://llk15.github.io/october/)。
 
-- 本地预览需在当前目录启动支持 HTTP Range 请求的静态服务器，例如运行 `npx serve .` 后访问命令显示的本地地址；不能直接双击 HTML，也不要使用不支持 Range 的旧版 `python3 -m http.server`。
+- macOS 本地预览：双击 `打开本地地图.command`，脚本会自动启动服务并在浏览器中打开地图；关闭地图后回到终端按 `Control+C` 即可停止。
+- 也可以在终端运行 `python3 本地预览.py`。不能直接双击 `index.html`，因为浏览器不允许 `file://` 页面分段读取 PMTiles。
+- 在 Cursor 中右键选择 **Open with Browser** 也可正常预览；页面会自动读取 GitHub Pages 上的同一份底图，以避开 Cursor 预览服务不支持 HTTP Range 的限制，因此这种方式需要联网。
 - 潮汕三市底图、行政边界、标记、筛选和弹窗均保存在仓库内；加载地图不再访问外部瓦片服务器。
 - 本地底图覆盖汕头、潮州、揭阳三市完整行政范围，支持 8—15 级缩放。
 - 左上角可按潮州、汕头、揭阳或当前路线缩放；右上角可开关各图层。
@@ -48,6 +50,7 @@
 
 - `index.html`：地图主页面，也是 GitHub Pages 默认入口。
 - `潮汕三市地图.html`：旧文件名的兼容跳转页。
+- `打开本地地图.command`、`本地预览.py`：无需第三方依赖的一键本地预览工具，支持 PMTiles 所需的 HTTP Range 请求。
 - `assets/leaflet.css`、`assets/leaflet.js`：Leaflet 1.9.4 本地资源。
 - `assets/protomaps-leaflet.js`：Protomaps Leaflet 5.1.0 本地矢量底图渲染器。
 - `assets/protomaps-leaflet.LICENSE.txt`：Protomaps Leaflet 的 BSD 3-Clause 许可证。
